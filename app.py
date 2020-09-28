@@ -1,4 +1,4 @@
-# Users Dashboard 
+# Admin Dashboard 
 # -*- coding: utf-8 -*-
 import base64
 import io
@@ -69,12 +69,10 @@ df['username'] = df['username'].replace('amansour','mansour' )
 df['duration']=df['duration'].mask(df['duration'] < 0, 120)
 df=df[42:]
 df.dropna(subset=['powerBar'], inplace = True)
-df
-
 df=df.reset_index(drop=True)
 users = df['username'].unique()
 dataframes=[]
-banned_list =['hossary','mostafa','mostaf']
+banned_list =['hossary','mostafa','mostaf','yyyy']
 i=-1
 Names=[]
 for j, user in enumerate( users) :
@@ -191,8 +189,8 @@ for k in range(N-1):
     dataforml[k]['Total Hours']=dataforml[k].iloc[:,:7].sum(axis=1)
 
 #ML Part
-    
-data=pd.read_csv('Nitrous.csv')
+
+data=pd.read_excel('Nitrous.xlsx')
 Features=data.iloc[:,:8].values
 Labels=data.iloc[:,9:].values
 #Setting 20 % of the Data for Testing 
@@ -220,48 +218,74 @@ for k in range(N-1):
 current_states=[0]*N
 for k in range (N-1):
     current_states[k]= Final[k].iloc[:,9:].sum(axis=0)+50
-
 ########################################################## Dash        
-        
-        
-app =dash.Dash()
+df.dropna(inplace=True)  
+fig1 =px.sunburst(df, path=['startYear','startMonth','title', 'topic'], values='duration')
+fig2 =px.sunburst(df, path=['startYear','startMonth','username'], values='duration')
+
+
+
+categories = ["Work Ethics","Student Mentality","Self Management","Technical Skills","Interpersonal","LeaderShip"]
+
+radar = go.Figure()
+for k in range(N-1):
+    radar.add_trace(go.Scatterpolar(
+          r=current_states[k],
+          theta=categories,
+          fill='toself',
+          name=Names[k] ))
+
+radar.update_layout(
+  polar=dict(
+    radialaxis=dict(
+      visible=True,
+      range=[0, 100]
+    )),
+  showlegend=True
+)
+radar.update_layout(
+    title={
+        'text': "Cumulative Users Power Bar Performance",
+        'y':0.95,
+        'x':0.48,
+        'xanchor': 'center',
+        'yanchor': 'top'
+    })
+
+
+fig1.update_layout(
+    title={
+        'text': "Cumulative Users Time Distribution",
+        'y':0.95,
+        'x':0.5,
+        'xanchor': 'center',
+        'yanchor': 'top'
+    })
+
+fig2.update_layout(
+    title={
+        'text':'Documentation Time',
+        'y':0.95,
+        'x':0.5,
+        'xanchor': 'center',
+        'yanchor': 'top'
+    })
+    
 app = dash.Dash(__name__)
 server = app.server
-app.title = 'Nitrous Users Dashboard'
-
-
-
-
-sunburst =px.sunburst(dataframes[0], path=['year','month','title', 'topic'], values='duration')
-
-q = pd.DataFrame(dict( r= current_states[0],theta=["Work Ethics","Student Mentality","Self Management","Technical Skills","Interpersonal","LeaderShip"]))
-radar = px.line_polar(q, r='r', theta='theta', line_close=True)
-radar.update_traces(fill='toself')
-
-
-line = go.Figure()
-line.add_trace(go.Scatter(x=dataforml[0].index, y=Final[0]['Work Ethics'].values          ,mode='lines+markers',name='Work Ethics'))
-line.add_trace(go.Scatter(x=dataforml[0].index, y=Final[0]['Student Mentality'].values    ,mode='lines+markers',name='Student Mentality'))
-line.add_trace(go.Scatter(x=dataforml[0].index, y=Final[0]['Self Management'].values      ,mode='lines+markers',name='Self Management'))
-line.add_trace(go.Scatter(x=dataforml[0].index, y=Final[0]['Technical Skills'].values     ,mode='lines+markers',name='Technical Skills'))
-line.add_trace(go.Scatter(x=dataforml[0].index, y=Final[0]['Interpersonal'].values        ,mode='lines+markers',name='Interpersonal'))
-line.add_trace(go.Scatter(x=dataforml[0].index, y=Final[0]['LeaderShip'].values           ,mode='lines+markers',name='LeaderShip'))
-
-
+app.title = 'Nitrous Admin Dashboard'
 app.layout=html.Div([
    
-    html.Div([html.A([html.H2('Nitrous Dashboard'),html.Img(src='/assets/nitrous-logo.png')], href='https://www.antscoin.org/')],className="banner"),
-    html.Div([dcc.Dropdown(id='demo-dropdown',
-                           options=[{'label':name, 'value':i} for i,name in enumerate( Names)],value=  0),
-                                    ],style={'margin-bottom': '10px','textAlign':'center','width':'220px','margin':'auto'}),
-    
-    
-    
-     html.Div([html.Div(dcc.Graph(id="Radar",figure=radar))],className="five columns"),
-     html.Div([html.Div(dcc.Graph(id="SunBurst",figure=sunburst))],className="five columns"),
-     html.Div([html.Div(dcc.Graph(id="Line",figure=line))],className="ten columns"),
+    html.Div([html.A([html.H2('Nitrous Dashboard'),html.Img(src='/assets/ants.png')], href='https://www.antscoin.org/')],className="banner"),
 
+    
+    
+     html.Div([html.Div(dcc.Graph(id="Radar",figure=radar))],className="twelve columns"),
+     html.Div([html.Div(dcc.Graph(id="Pie1",figure=fig1))],className="five columns"),
+     html.Div([html.Div(dcc.Graph(id="Pie2",figure=fig2))],className="five columns"),
 
+#     html.Div([html.Div(dcc.Graph(id="Violin"))],className="ten columns"),
+#     html.Div([html.Div(dcc.Graph(id="Table"))],className="ten columns")
 
     
   ])
@@ -269,38 +293,5 @@ app.layout=html.Div([
 
 
 
-
-
-
-@app.callback(dash.dependencies.Output('Radar','figure'),
-             [dash.dependencies.Input('demo-dropdown','value')]
-             )
-def update_fig(input_value):
-    q = pd.DataFrame(dict( r= current_states[input_value],theta=["Work Ethics","Student Mentality","Self Management","Technical Skills","Interpersonal","LeaderShip"]))
-    radar = px.line_polar(q, r='r', theta='theta', line_close=True)
-    radar.update_traces(fill='toself')    
-    return radar        
-
-@app.callback(dash.dependencies.Output('SunBurst','figure'),
-             [dash.dependencies.Input('demo-dropdown','value')]
-             )
-def update_fig(input_value):
-    sunburst =px.sunburst(dataframes[input_value], path=['year','month','title', 'topic'], values='duration')
-    return sunburst        
-
-@app.callback(dash.dependencies.Output('Line','figure'),
-             [dash.dependencies.Input('demo-dropdown','value')]
-             )
-def update_fig(input_value):
-    line = go.Figure()
-    line.add_trace(go.Scatter(x=dataforml[input_value].index, y=Final[input_value]['Work Ethics'].values          ,mode='lines+markers',name='Work Ethics'))
-    line.add_trace(go.Scatter(x=dataforml[input_value].index, y=Final[input_value]['Student Mentality'].values    ,mode='lines+markers',name='Student Mentality'))
-    line.add_trace(go.Scatter(x=dataforml[input_value].index, y=Final[input_value]['Self Management'].values      ,mode='lines+markers',name='Self Management'))
-    line.add_trace(go.Scatter(x=dataforml[input_value].index, y=Final[input_value]['Technical Skills'].values     ,mode='lines+markers',name='Technical Skills'))
-    line.add_trace(go.Scatter(x=dataforml[input_value].index, y=Final[input_value]['Interpersonal'].values        ,mode='lines+markers',name='Interpersonal'))
-    line.add_trace(go.Scatter(x=dataforml[input_value].index, y=Final[input_value]['LeaderShip'].values           ,mode='lines+markers',name='LeaderShip'))
-    return line  
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run_server(debug=True)
