@@ -220,7 +220,12 @@ for k in range(N-1):
 current_states=[0]*N
 for k in range (N-1):
     current_states[k]= Final[k].iloc[:,9:].sum(axis=0)+50
-
+currentweek=[0]*N
+for k in range(N-1):
+    currentweek[0]= pd.DataFrame(np.zeros((8, 2)))
+    currentweek[0].columns = ["topics","duration"]
+    currentweek[0]['duration']= pd.DataFrame(Final[4].iloc[-1,:8].values)
+    currentweek[0]['topics']=pd.DataFrame(['Int.Comm','Ext.Comm','Learn','Tech','Reletive','Break','Teach','Total Hours'])
 ########################################################## Dash        
         
         
@@ -232,6 +237,10 @@ app.title = 'Nitrous Users Dashboard'
 
 
 
+
+df=Final[0].iloc[:,:8]
+table = go.Figure(data=[go.Table(header=dict(values=list(df.columns),fill_color='#ee1a24',align='center'),cells=dict(values=[df['Int.Comm'],df['Ext.Comm'],df['Learn'], df['Tech'], df['Reletive'],df['Break'],df['Teach'],df['Total Hours']],fill_color='lavender',align='center'))])
+    
 sunburst =px.sunburst(dataframes[0], path=['year','month','title', 'topic'], values='duration')
 
 q = pd.DataFrame(dict( r= current_states[0],theta=["Work Ethics","Student Mentality","Self Management","Technical Skills","Interpersonal","LeaderShip"]))
@@ -260,6 +269,7 @@ app.layout=html.Div([
      html.Div([html.Div(dcc.Graph(id="Radar",figure=radar))],className="five columns"),
      html.Div([html.Div(dcc.Graph(id="SunBurst",figure=sunburst))],className="five columns"),
      html.Div([html.Div(dcc.Graph(id="Line",figure=line))],className="ten columns"),
+     html.Div([html.Div(dcc.Graph(id="Table",figure=table))],className="ten columns")
 
 
 
@@ -268,9 +278,13 @@ app.layout=html.Div([
 
 
 
-
-
-
+@app.callback(dash.dependencies.Output('Table','figure'),
+             [dash.dependencies.Input('demo-dropdown','value')]
+             )
+def update_fig(input_value):
+    df=Final[input_value].iloc[:,:8]
+    table = go.Figure(data=[go.Table(header=dict(values=list(df.columns),font=dict(color='white'),fill_color='#ee1a24',align='center'),cells=dict(values=[df['Int.Comm'],df['Ext.Comm'],df['Learn'], df['Tech'], df['Reletive'],df['Break'],df['Teach'],df['Total Hours']],fill_color='lavender',align='center'))])
+    return table
 
 @app.callback(dash.dependencies.Output('Radar','figure'),
              [dash.dependencies.Input('demo-dropdown','value')]
