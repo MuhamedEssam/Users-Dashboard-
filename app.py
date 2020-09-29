@@ -215,6 +215,7 @@ for k in range(N-1):
 
     Preds[k].columns =["Work Ethics","Student Mentality","Self Management","Technical Skills","Interpersonal","LeaderShip"]
     Final[k]=pd.concat([dataforml[k],Preds[k]],axis=1)
+    Final[k]=Final[k].round(decimals=1)
     
     
 current_states=[0]*N
@@ -231,7 +232,7 @@ for k in range(N-1):
         
 app =dash.Dash()
 app = dash.Dash(__name__)
-server = app.server
+#server = app.server
 app.title = 'Nitrous Users Dashboard'
 
 
