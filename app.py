@@ -232,7 +232,7 @@ for k in range(N-1):
         
 app =dash.Dash()
 app = dash.Dash(__name__)
-#server = app.server
+server = app.server
 app.title = 'Nitrous Users Dashboard'
 
 
