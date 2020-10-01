@@ -260,7 +260,7 @@ line.add_trace(go.Scatter(x=dataforml[0].index, y=Final[0]['LeaderShip'].values 
 
 app.layout=html.Div([
    
-    html.Div([html.A([html.H2('Nitrous Dashboard'),html.Img(src='/assets/nitrous-logo.png')], href='https://www.antscoin.org/')],className="banner"),
+    html.Div([html.A([html.H2('Nitrous Dashboard'),html.Img(src='/assets/nitrous-logo.png')], href='http://projectnitrous.com/')],className="banner"),
     html.Div([dcc.Dropdown(id='demo-dropdown',
                            options=[{'label':name, 'value':i} for i,name in enumerate( Names)],value=  0),
                                     ],style={'margin-bottom': '10px','textAlign':'center','width':'220px','margin':'auto'}),
