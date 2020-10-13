@@ -36,20 +36,20 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # ###################################################### Talking to Firebase 
-# credential_path = 'D:\\Projects\\Nitros Application v2\\fire.json'
-# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credential_path
-# cred = credentials.Certificate(os.environ['GOOGLE_APPLICATION_CREDENTIALS'])
-# firebase_admin.initialize_app(cred)
-# db = firestore.client()
-# Actions = list(db.collection(u'Nitrous').document(u'Actions').collection(u'Actions').stream())
-# Actions = list(map(lambda x: x.to_dict(), Actions))
+credential_path = './fire.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credential_path
+cred = credentials.Certificate(os.environ['GOOGLE_APPLICATION_CREDENTIALS'])
+firebase_admin.initialize_app(cred)
+db = firestore.client()
+Actions = list(db.collection(u'Nitrous').document(u'Actions').collection(u'Actions').stream())
+Actions = list(map(lambda x: x.to_dict(), Actions))
 
 ######################################################### Python
 
-df = pd.read_excel('dataframe.xlsx')
+df = pd.DataFrame(Actions)
 #Merging 
 df.loc[df['username'].isnull(),'username'] = df['userName']
-df=df.drop(['formattedDate','endMonth','endDay','endYear','id','status','value','userName','userID','factor','status'],1)
+df=df.drop(['formattedDate','endMonth','endDay','endYear','id','status','value','userName','factor','status'],1)
 df.dropna()
 #Renaming
 df["username"] = df["username"].str.lower()
@@ -69,12 +69,13 @@ df['username'] = df['username'].replace('amansour','mansour' )
 df['duration']=df['duration'].mask(df['duration'] < 0, 120)
 df=df[42:]
 df.dropna(subset=['powerBar'], inplace = True)
-df
 
 df=df.reset_index(drop=True)
 users = df['username'].unique()
 dataframes=[]
 banned_list =['hossary','mostafa','mostaf']
+clean = pd.DataFrame(np.zeros((15, 9)))
+clean.columns = ["Int. Comm","Ext. Comm","Learn","Tech","Reletive","Break","Teach","Total Hours","UserName"]
 i=-1
 Names=[]
 for j, user in enumerate( users) :
@@ -90,14 +91,13 @@ for j, user in enumerate( users) :
         df_user['year'] = df_user['year'].replace([20],2020)
         
         dataframes.append(df_user)
-        # to export  to excel 
-        #dataframes[i].to_excel(str(user)+'_df.xlsx')
+
 N=len(users)-len(banned_list)
-x=pd.to_datetime(dataframes[0][['year', 'month', 'day', 'hour', 'minute']])
+x=pd.to_datetime(dataframes[1][['year', 'month', 'day', 'hour', 'minute']])
 g=pd.DataFrame(x,columns=['date'])
-dataframes[0]=pd.concat([g,dataframes[0]],axis=1)
-dataframes[0]['week_number_of_year'] = dataframes[0]['date'].dt.week
-num=max(dataframes[0]['week_number_of_year'].values)-min(dataframes[0]['week_number_of_year'].values)
+dataframes[1]=pd.concat([g,dataframes[1]],axis=1)
+dataframes[1]['week_number_of_year'] = dataframes[1]['date'].dt.week
+num=max(dataframes[1]['week_number_of_year'].values)-min(dataframes[1]['week_number_of_year'].values)
 num=num+1
 
 dataforml=[0] * N
@@ -215,18 +215,31 @@ for k in range(N-1):
 
     Preds[k].columns =["Work Ethics","Student Mentality","Self Management","Technical Skills","Interpersonal","LeaderShip"]
     Final[k]=pd.concat([dataforml[k],Preds[k]],axis=1)
-    Final[k]=Final[k].round(decimals=1)
+    Final[k]=Final[k].round(decimals=2)
     
     
 current_states=[0]*N
 for k in range (N-1):
     current_states[k]= Final[k].iloc[:,9:].sum(axis=0)+50
-currentweek=[0]*N
+currentweek=[0]*N    
 for k in range(N-1):
-    currentweek[0]= pd.DataFrame(np.zeros((8, 2)))
-    currentweek[0].columns = ["topics","duration"]
-    currentweek[0]['duration']= pd.DataFrame(Final[4].iloc[-1,:8].values)
-    currentweek[0]['topics']=pd.DataFrame(['Int.Comm','Ext.Comm','Learn','Tech','Reletive','Break','Teach','Total Hours'])
+    currentweek[k]= pd.DataFrame(np.zeros((8, 2)))
+    currentweek[k].columns = ["topics","duration"]
+    currentweek[k]['duration']= pd.DataFrame(Final[k].iloc[-1,:8].values)
+    currentweek[k]['topics']=pd.DataFrame(['Int.Comm','Ext.Comm','Learn','Tech','Reletive','Break','Teach','Total Hours'])    
+for k in range (len(Names)):
+    try:
+        doc_ref = db.collection(u'Nitrous').document(u'Users').collection(dataframes[k]['userID'].values[0]).document(u'info')
+        doc_ref.update({
+                        u'class1': int(current_states[k][0]),
+                        u'class2': int(current_states[k][1]),
+                        u'class3': int(current_states[k][2]),
+                        u'class4': int(current_states[k][3]),
+                        u'class5': int(current_states[k][4]),
+                        u'class6': int(current_states[k][5]),
+        })
+    except:
+        pass
 ########################################################## Dash        
         
         
